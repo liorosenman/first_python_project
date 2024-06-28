@@ -9,16 +9,31 @@
 <body>
     <h2>Fill your details</h2>
     <form action="/register" method="post">
+        Username: <input type="text" name="username"><br>
+        Password: <input type="password" name="password"><br>
         Name: <input type="text" name="name"><br>
         City: <input type="text" name="city"><br>
-        Age: <input type="number" name="age"><br>
-        Password: <input type="password" name="password"><br>
+        Age: <input type="number" name="age"><br>       
         <input type="button" value="Register">
     </form>
+    <h2 id="message"></h2>
 </body>
 
 <script>
     const SERVER = 'http://127.0.0.1:5000'
-    
+    const register = () => {
+            axios.post(SERVER + "/register", {
+                name: name.value,
+                city: city.value,
+                age: age.value,
+                password: password.value
+            })
+            .then(response => {
+                alert('Registration successful: ' + response.data.message);
+            })
+            .catch(error => {
+                alert('Registration failed: ' + error.response.data.message);
+            });
+        };
 </script>
 </html>
