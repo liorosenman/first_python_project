@@ -23,16 +23,19 @@
     const SERVER = 'http://127.0.0.1:5000'
     const register = () => {
             axios.post(SERVER + "/register", {
+                username : username.value,
+                password: password.value,
                 name: name.value,
                 city: city.value,
-                age: age.value,
-                password: password.value
+                age: age.value,               
             })
             .then(response => {
-                alert('Registration successful: ' + response.data.message);
+            //    alert('Registration successful: ' + response.data.message);
+                message.innerHTML = response.data.message
             })
             .catch(error => {
-                alert('Registration failed: ' + error.response.data.message);
+             //   alert('Registration failed: ' + error.response.data.message);
+                message.innerHTML = response.data.message
             });
         };
 </script>

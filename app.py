@@ -1,7 +1,7 @@
 from datetime import date
 import enum
 import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
@@ -62,9 +62,9 @@ class Customer(db.Model):
     active = db.Column(db.Boolean, default=True, nullable=False)
     loans = db.relationship('Loan', backref='customer', lazy=True)
 
-    def __init__(self, username, password, name, city, age):
+    def __init__(self, username, password_hash, name, city, age):
         self.username = username
-        self.password_hash = generate_password_hash(password)
+        self.password_hash = password_hash
         self.name = name
         self.city = city
         self.age = age
@@ -80,42 +80,52 @@ class Loan(db.Model):
     return_date = db.Column(db.Date, nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
 
-@app.route('/register', methods=['POST'])
+@app.route('/register', methods=['POST', 'GET'])
 def create_new_user():
-    data = request.get_json()
-    name = data.get('name')
-    city = data.get('city')
-    age = data.get('age')
+    if  request.method == 'POST':
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
+        name = data.get('name')
+        city = data.get('city')
+        age = data.get('age')
 
+        if Customer.query.filter_by(username=username).first():
+            return jsonify({'message': 'Username already exists'}), 400
+        password_hash = generate_password_hash(password) 
+        new_user = Customer(username=username, password_hash=password_hash, name=name, city=city,age=age)
+        db.session.add(new_user)
+        db.session.commit()
+
+    return jsonify({'message': 'Registered successfully'}), 201
+    
 
 def admin_user_creation():
     admin_password = generate_password_hash('admin')
-    admin_user = Customer(username = "admin", password = "admin", name="admin", city='AdminCity', age=0)
+    admin_user = Customer(username = "admin", password_hash= admin_password, name="admin", city='AdminCity', age=0)
     db.session.add(admin_user)
     db.session.commit()
 
-# @app.route('/', methods=['GET'])
-# def direct_to_login_page():
-#     return "BUssiness"
+@app.route('/', methods=['GET'])
+def direct_to_login_page():
+    return "MY RESPONSE"
+    
 
 # @app.route('/register', methods=['GET'])
 # def direct_to_register_page():
 #     return "Hello world"
 
-# def delete_customer_table():
-#     DATABASE_URI = 'sqlite:///library.db'  # Replace with your actual database URI
-#     engine = create_engine(DATABASE_URI)
-#     metadata = MetaData()
-#     table_name = 'your_table_name'
-#     table_to_delete = Table(table_name, metadata, autoload_with=engine)
-#     table_to_delete.drop(engine)
+def delete_books_table():
+    DATABASE_URI = 'sqlite:///instance/library.db'  # Replace with your actual database URI
+    engine = create_engine(DATABASE_URI)
+    metadata = MetaData()
+    table_name = 'loans'
+    table_to_delete = Table(table_name, metadata, autoload_with=engine)
+    table_to_delete.drop(engine)
 
 if __name__ == '__main__':
     with app.app_context():
-        if(not all_tables_created):
-            db.create_all()         
-        if(not admin_user_created):
-            admin_user_creation()  
-        # delete_customer_table()  
+        db.create_all()         
+        #admin_user_creation() 
     app.run(debug=True)
 
