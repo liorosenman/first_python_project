@@ -7,7 +7,9 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy import create_engine, MetaData, Table
 from werkzeug.utils import secure_filename
+from werkzeug.datastructures import  FileStorage
 from werkzeug.security import generate_password_hash, check_password_hash
+#from flask_uploads import UploadSet, configure_uploads
 
 
 app = Flask(__name__)
@@ -16,6 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///library.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['JWT_SECRET_KEY'] = 'jwt_secret_key_here'
+app.config['UPLOADED_PHOTOS_DEST'] = 'media'
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
@@ -41,14 +44,16 @@ class Book(db.Model):
     type = db.Column(db.Integer, nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     exist = db.Column(db.Boolean, default=True, nullable=False)
+    isloaned = db.Column(db.Boolean, default=False, nullable=False)
 
-    def __init__(self, name, author, year_published, type, filename, exist=True):
+    def __init__(self, name, author, year_published, type, filename,exist=True,isloaned=False):
         self.name = name
         self.author = author
         self.year_published = year_published
         self.type = type
         self.filename = filename
         self.exist = exist
+        self.isloaned = isloaned
 
 class Customer(db.Model):
     __tablename__ = 'customers'
@@ -69,7 +74,9 @@ class Customer(db.Model):
         self.city = city
         self.age = age
         
-    
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+      
 class Loan(db.Model):
     __tablename__ = 'loans'
 
@@ -98,7 +105,52 @@ def create_new_user():
         db.session.commit()
 
     return jsonify({'message': 'Registered successfully'}), 201
+
+@app.route('/login', methods=['POST', 'GET'])
+def login_to_user():
+    data = request.json
+    username = data.get('username')
+    password = data.get('password')
+
+    customer = Customer.query.filter_by(username=username).first()
+
+    if not customer or not check_password_hash(customer.password_hash, password): #123 after encript = to scrypt:32768:8:1$rmqHNat7nzuoXlrr$91d9cc8e2c03f57be624ce3d273b02f77772a0a3dfbdf025927550f86724dd3b2a0e047ecc12480c62aeabb66d14d6cc81519c335cca5d73cf8563e4b1516af0
+            return jsonify({'message': 'Invalid credentials'}), 401
+
+    access_token = create_access_token(identity=username) # create new token
+    return jsonify({'access_token': access_token}), 200
+
+@app.route('/add_book', methods=['POST', 'GET'])
+@jwt_required()
+def add_book(): 
+    # Only user can perform this action 
+    current_user = get_jwt_identity()
+    if current_user['id'] != 1:
+        return jsonify({"msg": "Admin access required"}), 403
+    #extract the data from the request
+    name = request.form.get('name')
+    author = request.form.get('author')
+    year_published = request.form.get('year_published')
+    type = request.form.get('type')
+    exist = request.form.get('exist')
+    isloaned = request.form.get('isloaned')
+    file = request.files['filename'] # Path to the image
+
+    if file.filename == '':
+        return jsonify({'error': 'No file selected for uploading'}), 400
     
+    filename = secure_filename(file.filename)
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename)) #!!!!!!!!!!!!!!!!!!!!!!!!
+
+    new_book = Book(name=name, author=author, year_published=year_published,type=type,filename=filename,
+                    exist=exist,isloaned=isloaned)
+    
+    db.session.add(new_book)
+    db.session.commit()
+
+    return jsonify({
+    'message': 'File uploaded successfully',
+}), 200
 
 def admin_user_creation():
     admin_password = generate_password_hash('admin')
@@ -109,23 +161,20 @@ def admin_user_creation():
 @app.route('/', methods=['GET'])
 def direct_to_login_page():
     return "MY RESPONSE"
-    
 
-# @app.route('/register', methods=['GET'])
-# def direct_to_register_page():
-#     return "Hello world"
 
 def delete_books_table():
     DATABASE_URI = 'sqlite:///instance/library.db'  # Replace with your actual database URI
     engine = create_engine(DATABASE_URI)
     metadata = MetaData()
-    table_name = 'loans'
+    table_name = 'books'
     table_to_delete = Table(table_name, metadata, autoload_with=engine)
     table_to_delete.drop(engine)
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()         
+        db.create_all()
+        # delete_books_table()         
         #admin_user_creation() 
     app.run(debug=True)
 
