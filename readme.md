@@ -30,7 +30,10 @@ Links to books page after login
 Front page
 #### Add a book - Done
 No file was chosen case
-Display all books
+Display all books:
+ - All details
+ - Delete button
+ - Update button - window
 Find book by name
 Remove book
 

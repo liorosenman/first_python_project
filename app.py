@@ -1,7 +1,7 @@
 from datetime import date
 import enum
 import os
-from flask import Flask, render_template, request, jsonify, send_from_directory
+from flask import Flask, render_template, request, jsonify, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
@@ -41,16 +41,16 @@ class Book(db.Model):
     name = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(100), nullable=False)
     year_published = db.Column(db.Integer, nullable=False)
-    type = db.Column(db.Integer, nullable=False)
+    borrow_time = db.Column(db.Integer, nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     exist = db.Column(db.Boolean, default=True, nullable=False)
     isloaned = db.Column(db.Boolean, default=False, nullable=False)
 
-    def __init__(self, name, author, year_published, type, filename,exist=True,isloaned=False):
+    def __init__(self, name, author, year_published, borrow_time, filename,exist=True,isloaned=False):
         self.name = name
         self.author = author
         self.year_published = year_published
-        self.type = type
+        self.borrow_time = borrow_time
         self.filename = filename
         self.exist = exist
         self.isloaned = isloaned
@@ -131,19 +131,21 @@ def add_book():
     #extract the data from the request
     name = request.form.get('name')
     author = request.form.get('author')
+    if (name is None or author is None):
+        print("You are in trouble")
     year_published = request.form.get('year_published')
-    type = request.form.get('type')
+    borrow_time = request.form.get('borrow_time')
+    # print(borrow_time)
     exist = request.form.get('exist')
     isloaned = request.form.get('isloaned')
     file = request.files['filename'] # Path to the image
-    print(file)
     if file.filename == '':
         return jsonify({'error': 'No file selected for uploading'}), 400
     
     filename = secure_filename(file.filename)
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename)) #!!!!!!!!!!!!!!!!!!!!!!!!
+    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-    new_book = Book(name=name, author=author, year_published=year_published,type=type,filename=filename,
+    new_book = Book(name=name, author=author, year_published=year_published,borrow_time=borrow_time,filename=filename,
                     exist=exist,isloaned=isloaned)
     
     db.session.add(new_book)
@@ -152,6 +154,49 @@ def add_book():
     return jsonify({
     'message': 'File uploaded successfully',
 }), 200
+
+@app.route('/display_books', methods=['GET'])
+@jwt_required()
+def show_books():
+    current_user = get_jwt_identity()
+    book_list = []
+    if current_user == "admin":
+        books = Book.query.all()
+        for book in books:   
+            book_dic = {
+            'name' : book.name,
+            'author': book.author,
+            'year_published': book.year_published,
+            'borrow_time': BookType(book.borrow_time).name,
+            'filename': book.filename,
+            'exist': book.exist,
+            'isloaned': book.isloaned
+            }
+            book_list.append(book_dic)
+        
+    return jsonify(book_list)
+
+@app.route('/display_customers', methods=['GET'])
+@jwt_required()
+def show_customers():
+    current_user = get_jwt_identity()
+    customers_list = []
+    if (current_user != "admin"):
+        return jsonify({"message":"Only admin is permitted"})
+    customers = db.session.query(Customer).filter(Customer.id != 1).all()
+    for customer in customers:
+        customer_dict = {
+            'username' : customer.username,
+            'name' : customer.name,
+            'city' : customer.city,
+            'age' : customer.age,
+            'status' : customer.active
+        }
+        customers_list.append(customer_dict)
+    return jsonify(customers_list)
+
+
+
 
 def admin_user_creation():
     admin_password = generate_password_hash('admin')
@@ -172,10 +217,20 @@ def delete_books_table():
     table_to_delete = Table(table_name, metadata, autoload_with=engine)
     table_to_delete.drop(engine)
 
+def change_table_name():
+    engine = create_engine('sqlite:///instance/library.db')
+    connection = engine.raw_connection()
+    cursor = connection.cursor()
+    cursor.execute('DROP DATABASE library.db;')
+    connection.commit()
+    cursor.close()
+    connection.close()
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # delete_books_table()         
+        #change_table_name()
+        #delete_books_table()         
         #admin_user_creation() 
     app.run(debug=True)
 
