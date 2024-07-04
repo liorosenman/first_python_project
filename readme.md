@@ -27,12 +27,13 @@ Links to books page after login
 
 ## ---ADMIN----------------------------------------------------------------------------
 ### Books page:
-Add a book div
+Front page
+#### Add a book - Done
+No file was chosen case
 Display all books
-Update a book div
 Find book by name
 Remove book
- 
+
 
 
 
@@ -43,3 +44,4 @@ Remove book
 Cut all models to a seperate file
 Redirection and links to pages
 admin: id=1 => isadmin=true
+CRUD for all models

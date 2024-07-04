@@ -40,7 +40,7 @@ class Book(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     name = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(100), nullable=False)
-    year_published = db.Column(db.Date, nullable=False)
+    year_published = db.Column(db.Integer, nullable=False)
     type = db.Column(db.Integer, nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     exist = db.Column(db.Boolean, default=True, nullable=False)
@@ -125,7 +125,8 @@ def login_to_user():
 def add_book(): 
     # Only user can perform this action 
     current_user = get_jwt_identity()
-    if current_user['id'] != 1:
+    # print(current_user)
+    if current_user != "admin":
         return jsonify({"msg": "Admin access required"}), 403
     #extract the data from the request
     name = request.form.get('name')
@@ -135,7 +136,7 @@ def add_book():
     exist = request.form.get('exist')
     isloaned = request.form.get('isloaned')
     file = request.files['filename'] # Path to the image
-
+    print(file)
     if file.filename == '':
         return jsonify({'error': 'No file selected for uploading'}), 400
     
