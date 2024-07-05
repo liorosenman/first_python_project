@@ -1,11 +1,11 @@
-from datetime import date
+from datetime import date, datetime, timedelta
 import enum
 import os
 from flask import Flask, render_template, request, jsonify, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, MetaData, Table, Integer, Enum
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,6 +18,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///library.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['JWT_SECRET_KEY'] = 'jwt_secret_key_here'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 2400
 app.config['UPLOADED_PHOTOS_DEST'] = 'media'
 
 db = SQLAlchemy(app)
@@ -30,9 +31,14 @@ admin_user_created = True
 all_tables_created = True
 
 class BookType(enum.Enum):
-    TEN_DAYS = 1
-    FIVE_DAYS = 2
-    TWO_DAYS = 3
+    TYPE_1 = 10  
+    TYPE_2 = 5   
+    TYPE_3 = 2
+
+class BookStatus(enum.Enum):
+     AVAILABLE = "available"
+     LOANED = "loaned"
+     ERASED = "erased"
 
 class Book(db.Model):
     __tablename__ = 'books'
@@ -41,19 +47,18 @@ class Book(db.Model):
     name = db.Column(db.String(100), nullable=False)
     author = db.Column(db.String(100), nullable=False)
     year_published = db.Column(db.Integer, nullable=False)
-    borrow_time = db.Column(db.Integer, nullable=False)
+    borrow_time = db.Column(Enum(BookType), nullable = False)
     filename = db.Column(db.String(255), nullable=False)
-    exist = db.Column(db.Boolean, default=True, nullable=False)
-    isloaned = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(Enum(BookStatus), default = "available", nullable = False)
 
-    def __init__(self, name, author, year_published, borrow_time, filename,exist=True,isloaned=False):
+    def __init__(self, name, author, year_published, borrow_time, filename,exist=True,status="available"):
         self.name = name
         self.author = author
         self.year_published = year_published
         self.borrow_time = borrow_time
         self.filename = filename
         self.exist = exist
-        self.isloaned = isloaned
+        self.status= status
 
 class Customer(db.Model):
     __tablename__ = 'customers'
@@ -131,8 +136,6 @@ def add_book():
     #extract the data from the request
     name = request.form.get('name')
     author = request.form.get('author')
-    if (name is None or author is None):
-        print("You are in trouble")
     year_published = request.form.get('year_published')
     borrow_time = request.form.get('borrow_time')
     # print(borrow_time)
@@ -195,7 +198,31 @@ def show_customers():
         customers_list.append(customer_dict)
     return jsonify(customers_list)
 
+@app.route('/loan_book', methods=['GET', 'POST'])
+@jwt_required()
+def loan_book():
+    current_user = get_jwt_identity()
+    #current_user_id = current_user.id
+    if current_user == "admin":
+        return jsonify({"msg": "Only regular user can borrow"}), 403
+    print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
+    data = request.get_json()
+    customerId = data.get('customerId')
+    bookId = data.get('bookId')
+    loan_date = date.today()
+    the_book = db.session.query(Book).filter(Book.id == bookId).first()
+    print(the_book)
+    the_book_borrow_time = the_book.borrow_time
+    return_date = loan_date + timedelta(days=10)
+    print(current_user, return_date)
 
+    
+
+
+
+@app.route('/', methods=['GET'])
+def direct_to_login_page():
+    return "MY RESPONSE"
 
 
 def admin_user_creation():
@@ -203,10 +230,6 @@ def admin_user_creation():
     admin_user = Customer(username = "admin", password_hash= admin_password, name="admin", city='AdminCity', age=0)
     db.session.add(admin_user)
     db.session.commit()
-
-@app.route('/', methods=['GET'])
-def direct_to_login_page():
-    return "MY RESPONSE"
 
 
 def delete_books_table():
@@ -221,7 +244,7 @@ def change_table_name():
     engine = create_engine('sqlite:///instance/library.db')
     connection = engine.raw_connection()
     cursor = connection.cursor()
-    cursor.execute('DROP DATABASE library.db;')
+    cursor.execute('DROP TABLE books;')
     connection.commit()
     cursor.close()
     connection.close()
@@ -229,7 +252,7 @@ def change_table_name():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        #change_table_name()
+        # change_table_name()
         #delete_books_table()         
         #admin_user_creation() 
     app.run(debug=True)
