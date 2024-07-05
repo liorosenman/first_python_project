@@ -4,7 +4,7 @@ import os
 from flask import Flask, render_template, request, jsonify, send_from_directory, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, jwt_required, create_access_token, get_jwt_identity
+from flask_jwt_extended import JWTManager, get_jwt, jwt_required, create_access_token, get_jwt_identity
 from sqlalchemy import create_engine, MetaData, Table, Integer, Enum
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
@@ -20,9 +20,18 @@ app.config['SECRET_KEY'] = 'your_secret_key_here'
 app.config['JWT_SECRET_KEY'] = 'jwt_secret_key_here'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 2400
 app.config['UPLOADED_PHOTOS_DEST'] = 'media'
+app.config['JWT_BLACKLIST_ENABLED'] = True
+app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
+
+blacklist = set()
+
+@jwt.token_in_blocklist_loader
+def check_if_token_is_revoked(jwt_header, jwt_payload):
+    jti = jwt_payload['jti']
+    return jti in blacklist
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'media')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -49,15 +58,14 @@ class Book(db.Model):
     year_published = db.Column(db.Integer, nullable=False)
     borrow_time = db.Column(Enum(BookType), nullable = False)
     filename = db.Column(db.String(255), nullable=False)
-    status = db.Column(Enum(BookStatus), default = "available", nullable = False)
+    status = db.Column(Enum(BookStatus), default = BookStatus.AVAILABLE, nullable = False)
 
-    def __init__(self, name, author, year_published, borrow_time, filename,exist=True,status="available"):
+    def __init__(self, name, author, year_published, borrow_time, filename,exist=True,status = BookStatus.AVAILABLE):
         self.name = name
         self.author = author
         self.year_published = year_published
         self.borrow_time = borrow_time
         self.filename = filename
-        self.exist = exist
         self.status= status
 
 class Customer(db.Model):
@@ -88,9 +96,17 @@ class Loan(db.Model):
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
     customer_id = db.Column(db.Integer, db.ForeignKey('customers.id'), nullable=False)
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'), nullable=False)
-    loan_date = db.Column(db.Date, default=date.today, nullable=False)
+    loan_date = db.Column(db.Date, default=date.today(), nullable=False)
     return_date = db.Column(db.Date, nullable=False)
     active = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __init__(self, customer_id, book_id, return_date):
+        self.customer_id = customer_id
+        self.book_id = book_id
+        self.return_date = return_date
+        
+
+
 
 @app.route('/register', methods=['POST', 'GET'])
 def create_new_user():
@@ -125,6 +141,14 @@ def login_to_user():
     access_token = create_access_token(identity=username) # create new token
     return jsonify({'access_token': access_token}), 200
 
+@app.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    jti = get_jwt()['jti']
+    blacklist.add(jti)
+    return jsonify({'message': 'Successfully logged out'}), 200
+
+
 @app.route('/add_book', methods=['POST', 'GET'])
 @jwt_required()
 def add_book(): 
@@ -139,8 +163,6 @@ def add_book():
     year_published = request.form.get('year_published')
     borrow_time = request.form.get('borrow_time')
     # print(borrow_time)
-    exist = request.form.get('exist')
-    isloaned = request.form.get('isloaned')
     file = request.files['filename'] # Path to the image
     if file.filename == '':
         return jsonify({'error': 'No file selected for uploading'}), 400
@@ -148,9 +170,8 @@ def add_book():
     filename = secure_filename(file.filename)
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
 
-    new_book = Book(name=name, author=author, year_published=year_published,borrow_time=borrow_time,filename=filename,
-                    exist=exist,isloaned=isloaned)
-    
+    new_book = Book(name=name, author=author, year_published=year_published,borrow_time=borrow_time,filename=filename)
+                     
     db.session.add(new_book)
     db.session.commit()
 
@@ -205,16 +226,20 @@ def loan_book():
     #current_user_id = current_user.id
     if current_user == "admin":
         return jsonify({"msg": "Only regular user can borrow"}), 403
-    print("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
+    the_borrowing_user_id = db.session.query(Customer).filter(Customer.username == current_user).first().id
     data = request.get_json()
-    customerId = data.get('customerId')
-    bookId = data.get('bookId')
+    bookId = data.get('book_id')
+    print(bookId)
     loan_date = date.today()
     the_book = db.session.query(Book).filter(Book.id == bookId).first()
     print(the_book)
-    the_book_borrow_time = the_book.borrow_time
-    return_date = loan_date + timedelta(days=10)
-    print(current_user, return_date)
+    borrow_time = the_book.borrow_time.value
+    return_date = loan_date + timedelta(days = borrow_time)
+    the_book.status = BookStatus.LOANED
+    new_loan = Loan(customer_id = the_borrowing_user_id, book_id = bookId, return_date = return_date)
+    db.session.add(new_loan)
+    db.session.commit()
+    return jsonify({'message': 'A new loan was made'}), 201
 
     
 
@@ -244,7 +269,8 @@ def change_table_name():
     engine = create_engine('sqlite:///instance/library.db')
     connection = engine.raw_connection()
     cursor = connection.cursor()
-    cursor.execute('DROP TABLE books;')
+    cursor.execute("DROP TABLE books")
+    # cursor.execute("UPDATE books SET status = 'AVAILABLE' WHERE id = 4;")
     connection.commit()
     cursor.close()
     connection.close()
@@ -252,7 +278,7 @@ def change_table_name():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        # change_table_name()
+        #change_table_name()
         #delete_books_table()         
         #admin_user_creation() 
     app.run(debug=True)
