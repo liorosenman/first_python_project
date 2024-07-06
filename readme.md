@@ -36,6 +36,19 @@ Display all books:
  - Update button - window
 Find book by name
 Remove book
+### Remove a book
+1. Getting the id of the book
+2. If the book is removed, alert
+3. if the book is loaned, kill the loan first --> then remove
+
+## ---USER----------------------------------------------------------------------------
+### Loan a book:
+1. Create a new loan
+2. Change book's status to LOANED
+### Return a book:
+1. Change in loans table the row to inactive
+2. Change the book status to AVAILABLE
+
 
 
 

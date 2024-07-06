@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 import enum
 import os
-from flask import Flask, render_template, request, jsonify, send_from_directory, session
+from flask import Flask, redirect, render_template, request, jsonify, send_from_directory, session, url_for
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, get_jwt, jwt_required, create_access_token, get_jwt_identity
@@ -193,8 +193,7 @@ def show_books():
             'year_published': book.year_published,
             'borrow_time': BookType(book.borrow_time).name,
             'filename': book.filename,
-            'exist': book.exist,
-            'isloaned': book.isloaned
+            'status' : BookStatus(book.status).name
             }
             book_list.append(book_dic)
         
@@ -241,8 +240,73 @@ def loan_book():
     db.session.commit()
     return jsonify({'message': 'A new loan was made'}), 201
 
-    
+@app.route('/return_book', methods=['GET', 'POST'])
+@jwt_required()
+def return_book():
+    data = request.get_json()
+    finished_loan_id = data.get('loan_id')
+    # returned_book_id = data.get('book_id')
+    finished_loan = db.session.query(Loan).filter(Loan.id == finished_loan_id).first()
+    returned_book_id = finished_loan.book_id
+    returned_book = db.session.query(Book).filter(Book.id == returned_book_id).first()    
+    returned_book.status = BookStatus.AVAILABLE
+    finished_loan.active = False
+    db.session.commit()
+    return jsonify({"message":"The book was returned"})
 
+@app.route('/remove_book', methods=['GET', 'POST'])
+@jwt_required()
+def remove_book():
+    current_user = get_jwt_identity()
+    if current_user != "admin":
+        return jsonify({"message":"Only admin is allowed to remove a book"})
+    data = request.get_json()
+    removed_book_id = data.get('removed_book_id')
+    removed_book = db.session.query(Book).filter(Book.id == removed_book_id).first()
+    if removed_book.status == BookStatus.AVAILABLE:
+        removed_book.status = BookStatus.ERASED
+    elif removed_book.status == BookStatus.LOANED: #DELETE a loaned book
+        removed_book = db.session.query(Book).filter(Book.id == removed_book_id).first()
+        print(removed_book)
+        removed_book.status = BookStatus.ERASED
+        removed_loan = db.session.query(Loan).filter(Loan.book_id == removed_book_id).first()
+        removed_loan.active = False
+    elif removed_book.status == BookStatus.ERASED:
+        return jsonify({"message:": "This book is already erased"})
+    db.session.commit()
+    return jsonify({"message": "Book erased successfully"})
+
+@app.route('/remove_customer', methods=['GET', 'POST'])
+@jwt_required()
+def remove_customer():
+    current_user = get_jwt_identity()
+    if current_user != "admin":
+        return jsonify({"message":"Only admin is allowed to remove a customer"})
+    data = request.get_json()
+    removed_customer_id = data.get('remove_customer_id')
+    removed_customer_loans = db.session.query(Loan).filter(Loan.customer_id == removed_customer_id).first()
+    if removed_customer_loans: #If this customer has active loans
+        return jsonify({"message" : "This customer has loans"})
+    else:
+        removed_customer = db.session.query(Customer).filter(Customer.id == removed_customer_id).first()
+        removed_customer.active = False
+        db.session.commit()
+        return jsonify({"message" : "Customer erased successfully"})
+
+@app.route('/find_customer_by_name', methods=['GET'])
+@jwt_required()
+def find_customer_by_name():
+    current_user = get_jwt_identity()
+    if current_user != "admin":
+        return jsonify({"message":"Only admin is accessed to the DB"})
+    data = request.get_json()
+    query = data.get('name_for_search')
+    customers = Customer.query.filter(Customer.name.ilike(f'%{query}%')).all()
+    results = [{'id': customer.id, 'username': customer.username, 'name': customer.name, 'city': customer.city, 'age': customer.age, 'active': customer.active} for customer in customers]
+    return jsonify(results)
+
+    
+    
 
 
 @app.route('/', methods=['GET'])
