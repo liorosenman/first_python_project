@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Customer Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Customer Management</h1>
+
+    <h2>Display Customers</h2>
+    <button onclick="displayCustomers()">Display Customers</button>
+    <div id="customerList"></div>
+
+    <h2>Find Customer by Name</h2>
+    <input type="text" id="nameForSearch" placeholder="Enter customer name">
+    <button onclick="findCustomerByName()">Find Customer</button>
+    <div id="searchResults"></div>
+
+    <script>
+        const token = 'YOUR_JWT_TOKEN_HERE';  // Replace with actual JWT token
+
+        function displayCustomers() {
+            axios.get('/display_customers', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(response => {
+                const customers = response.data;
+                let output = '<ul>';
+                customers.forEach(customer => {
+                    output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.status}`;
+                    if (customer.status) {
+                        output += ` <button onclick="removeCustomerById(${customer.id})">Remove</button>`;
+                    }
+                    output += '</li>';
+                });
+                output += '</ul>';
+                document.getElementById('customerList').innerHTML = output;
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Error displaying customers: ' + error.response.data.message);
+            });
+        }
+
+        function findCustomerByName() {
+            const nameForSearch = document.getElementById('nameForSearch').value;
+            axios.get('/find_customer_by_name', {
+                headers: { 'Authorization': `Bearer ${token}` },
+                data: { name_for_search: nameForSearch }
+            })
+            .then(response => {
+                const customers = response.data;
+                let output = '<ul>';
+                customers.forEach(customer => {
+                    output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.active}</li>`;
+                });
+                output += '</ul>';
+                document.getElementById('searchResults').innerHTML = output;
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Error finding customer: ' + error.response.data.message);
+            });
+        }
+
+        function removeCustomer() {
+            const removeCustomerId = document.getElementById('removeCustomerId').value;
+            axios.post('/remove_customer', { remove_customer_id: removeCustomerId }, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+            .then(response => {
+                document.getElementById('removeMessage').innerHTML = response.data.message;
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Error removing customer: ' + error.response.data.message);
+            });
+        }
+    </script>
+</body>
+</html>

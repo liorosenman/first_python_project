@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Library Management</h1>
+
+    <!-- Add Book Form -->
+    <div id="admin-section" style="display: none;">
+        <h2>Add Book</h2>
+        <form id="add-book-form" onsubmit="addBook(event)">
+            <input type="text" id="name" placeholder="Book Name" required><br>
+            <input type="text" id="author" placeholder="Author" required><br>
+            <input type="number" id="year_published" placeholder="Year Published" required><br>
+            <input type="number" id="borrow_time" placeholder="Borrow Time (days)" required><br>
+            <input type="file" id="filename" required><br>
+            <button type="submit">Add Book</button>
+        </form>
+    </div>
+
+    <!-- Search Books -->
+    <h2>Search Books</h2>
+    <input type="text" id="search-query" placeholder="Search by name">
+    <button onclick="findBookByName()">Search</button>
+
+    <!-- Display Books -->
+    <h2>Books</h2>
+    <div id="books-list"></div>
+
+    <script>
+        const token = 'your_jwt_token_here'; // Replace with actual JWT token
+
+        document.addEventListener('DOMContentLoaded', function() {
+            checkUser();
+            loadBooks();
+        });
+
+        async function checkUser() {
+            const user = await getCurrentUser();
+            if (user === 'admin') {
+                document.getElementById('admin-section').style.display = 'block';
+            }
+        }
+
+        async function getCurrentUser() {
+            // Mock implementation, replace with actual user authentication check
+            return 'admin'; // Example value
+        }
+
+        async function loadBooks() {
+            try {
+                const response = await axios.get('/display_books', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                displayBooks(response.data);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function displayBooks(books) {
+            const booksList = document.getElementById('books-list');
+            booksList.innerHTML = '';
+            books.forEach(book => {
+                const bookDiv = document.createElement('div');
+                bookDiv.innerHTML = `
+                    <p>Name: ${book.name}</p>
+                    <p>Author: ${book.author}</p>
+                    <p>Year Published: ${book.year_published}</p>
+                    <p>Borrow Time: ${book.borrow_time}</p>
+                    <p>Status: ${book.status}</p>
+                    <p>Filename: ${book.filename}</p>
+                    ${getCurrentUser() === 'admin' ? `<button onclick="removeBook(${book.id})">Remove</button>` : ''}
+                    ${getCurrentUser() !== 'admin' ? `<button onclick="loanBook(${book.id})">Loan</button>` : ''}
+                `;
+                booksList.appendChild(bookDiv);
+            });
+        }
+
+        async function addBook(event) {
+            event.preventDefault();
+            const formData = new FormData();
+            formData.append('name', document.getElementById('name').value);
+            formData.append('author', document.getElementById('author').value);
+            formData.append('year_published', document.getElementById('year_published').value);
+            formData.append('borrow_time', document.getElementById('borrow_time').value);
+            formData.append('filename', document.getElementById('filename').files[0]);
+
+            try {
+                await axios.post('/add_book', formData, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                loadBooks();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function loanBook(bookId) {
+            try {
+                await axios.post('/loan_book', { book_id: bookId }, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadBooks();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function removeBook(bookId) {
+            try {
+                await axios.post('/remove_book', { removed_book_id: bookId }, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                loadBooks();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function findBookByName() {
+            const query = document.getElementById('search-query').value;
+            try {
+                const response = await axios.get('/find_book_by_name', {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    params: { name_for_search: query }
+                });
+                displayBooks(response.data);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

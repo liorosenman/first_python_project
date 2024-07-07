@@ -201,7 +201,6 @@ def show_books():
             'status' : BookStatus(book.status).name
             }
             book_list.append(book_dic)
-    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     return jsonify(book_list)
 
 @app.route('/display_customers', methods=['GET'])
@@ -432,6 +431,11 @@ def display_all_late_loans():
             late_loans_dicts.append(loan_dict)
     return late_loans_dicts
 
+@app.route('/current_user', methods=['GET'])
+@jwt_required()
+def current_user():
+    current_user = get_jwt_identity()
+    return jsonify({"username": current_user}), 200
 
 @app.route('/', methods=['GET'])
 def direct_to_login_page():
