@@ -184,9 +184,11 @@ def add_book():
 def show_books():
     current_user = get_jwt_identity()
     book_list = []
-    if current_user == "admin":
+    if current_user == "admin": ##
         books = Book.query.all()
-        for book in books:   
+    else:
+         books = db.session.query(Book).filter(Book.status == BookStatus.AVAILABLE).all()
+    for book in books:   
             book_dic = {
             'name' : book.name,
             'author': book.author,
@@ -196,7 +198,6 @@ def show_books():
             'status' : BookStatus(book.status).name
             }
             book_list.append(book_dic)
-        
     return jsonify(book_list)
 
 @app.route('/display_customers', methods=['GET'])
@@ -305,8 +306,79 @@ def find_customer_by_name():
     results = [{'id': customer.id, 'username': customer.username, 'name': customer.name, 'city': customer.city, 'age': customer.age, 'active': customer.active} for customer in customers]
     return jsonify(results)
 
-    
-    
+@app.route('/find_book_by_name', methods=['GET'])
+@jwt_required()
+def find_book_by_name():
+    current_user = get_jwt_identity()
+    data = request.get_json()
+    query = data.get('name_for_search')
+    filtered_books_dicts = []
+    if current_user == "admin":
+        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+        filtered_books = Book.query.filter(Book.name.ilike(f'%{query}%')).all()
+        print(filtered_books)
+    else:
+        filtered_books = db.session.query(Book).filter(Book.status == BookStatus.AVAILABLE, Book.name.like(f"%{query}%")).all()
+        print(filtered_books)
+    for book in filtered_books:   
+        book_dic = {
+        'name' : book.name,
+        'author': book.author,
+        'year_published': book.year_published,
+        'borrow_time': BookType(book.borrow_time).name,
+        'filename': book.filename,
+        'status' : BookStatus(book.status).name
+        }
+        filtered_books_dicts.append(book_dic)
+    return jsonify(filtered_books_dicts)
+
+@app.route('/display_all_loans', methods=['GET'])
+@jwt_required()
+def display_all_loans():
+    current_user = get_jwt_identity()
+    query = (
+    db.session.query(
+    Loan.id.label("loan_id"),
+    Loan.customer_id,
+    Customer.name.label("customer_name"),
+    Loan.book_id,
+    Book.name.label("book_name"),
+    Loan.loan_date,
+    Loan.return_date,
+    Loan.active,
+    )
+    .join(Customer, Loan.customer_id == Customer.id)
+    .join(Book, Loan.book_id == Book.id)
+)
+    loans_dicts = []
+    if (current_user == "admin"):
+        loans = query.all()   
+        for loan in loans:
+            loan_dict = {
+                "loan_id": loan.loan_id,
+                "customer_id": loan.customer_id,
+                "customer_name": loan.customer_name,
+                "book_id": loan.book_id,
+                "book_name": loan.book_name,
+                "Loan_date": loan.loan_date,
+                "return_date": loan.return_date,
+                "active": loan.active
+            }
+            loans_dicts.append(loan_dict)
+
+    else:
+        customer = db.session.query(Customer).filter(Customer.username == current_user).first()
+        loans = query.filter(Loan.customer_id == customer.id)
+        for loan in loans:
+            loan_dict = {
+                "customer_name": loan.customer_name,
+                "book_name": loan.book_name,
+                "Loan_date": loan.loan_date,
+                "return_date": loan.return_date,
+                "active": loan.active
+            }
+            loans_dicts.append(loan_dict)
+    return loans_dicts
 
 
 @app.route('/', methods=['GET'])
