@@ -19,17 +19,17 @@
         <input type="button" value="Login" onclick="login()">
     </form>
 
-    <h3><a href="http://127.0.0.1:5000/register">Register Page</a></h3>
+    <h3><a href="register.html">Register Page</a></h3>
 </body>
 
     <script>
 
-        const SERVER = 'http://127.0.0.1:5500';
+        const SERVER = 'http://127.0.0.1:5000';
 
-        // document.getElementById('loginForm').addEventListener('submit', function(event) {
-        //     event.preventDefault(); // Prevent the form from submitting the traditional way
-        //     login();
-        // });
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+            login();
+        });
 
         const login = () => {
             const username = document.getElementById('username').value;
@@ -41,9 +41,9 @@
             })
             .then(response => {
                 const token = response.data.access_token;
-                console.log(token);
                 localStorage.setItem('token', token); // Store token in localStorage
-                window.location.href = '/display_books'
+                console.log(token);
+                window.location.href = 'books.html'
             })
             .catch(error => {
                 console.error('Error logging in:', error);

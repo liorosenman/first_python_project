@@ -9,7 +9,6 @@ from sqlalchemy import and_, create_engine, MetaData, Table, Integer, Enum
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
 from werkzeug.security import generate_password_hash, check_password_hash
-#from flask_uploads import UploadSet, configure_uploads
 
 
 app = Flask(__name__)
@@ -106,8 +105,6 @@ class Loan(db.Model):
         self.return_date = return_date
         
 
-
-
 @app.route('/register', methods=['POST', 'GET'])
 def create_new_user():
     if  request.method == 'POST':
@@ -135,14 +132,12 @@ def login_to_user():
 
     customer = Customer.query.filter_by(username=username).first()
 
-    if not customer or not check_password_hash(customer.password_hash, password): #123 after encript = to scrypt:32768:8:1$rmqHNat7nzuoXlrr$91d9cc8e2c03f57be624ce3d273b02f77772a0a3dfbdf025927550f86724dd3b2a0e047ecc12480c62aeabb66d14d6cc81519c335cca5d73cf8563e4b1516af0
+    if not customer or not check_password_hash(customer.password_hash, password): 
             return jsonify({'message': 'Invalid credentials'}), 401
 
     access_token = create_access_token(identity=username) # create new token
+    print(access_token)
     return access_token
-    # return redirect(url_for('show_books', token=access_token))
-
-    # return jsonify({'access_token': access_token}), 200
 
 @app.route('/logout', methods=['POST'])
 @jwt_required()
@@ -155,17 +150,13 @@ def logout():
 @app.route('/add_book', methods=['POST', 'GET'])
 @jwt_required()
 def add_book(): 
-    # Only user can perform this action 
     current_user = get_jwt_identity()
-    # print(current_user)
     if current_user != "admin":
         return jsonify({"msg": "Admin access required"}), 403
-    #extract the data from the request
     name = request.form.get('name')
     author = request.form.get('author')
     year_published = request.form.get('year_published')
     borrow_time = request.form.get('borrow_time')
-    # print(borrow_time)
     file = request.files['filename'] # Path to the image
     if file.filename == '':
         return jsonify({'error': 'No file selected for uploading'}), 400
@@ -226,7 +217,6 @@ def show_customers():
 @jwt_required()
 def loan_book():
     current_user = get_jwt_identity()
-    #current_user_id = current_user.id
     if current_user == "admin":
         return jsonify({"msg": "Only regular user can borrow"}), 403
     the_borrowing_user_id = db.session.query(Customer).filter(Customer.username == current_user).first().id
@@ -249,7 +239,6 @@ def loan_book():
 def return_book():
     data = request.get_json()
     finished_loan_id = data.get('loan_id')
-    # returned_book_id = data.get('book_id')
     finished_loan = db.session.query(Loan).filter(Loan.id == finished_loan_id).first()
     returned_book_id = finished_loan.book_id
     returned_book = db.session.query(Book).filter(Book.id == returned_book_id).first()    
@@ -317,7 +306,6 @@ def find_book_by_name():
     query = data.get('name_for_search')
     filtered_books_dicts = []
     if current_user == "admin":
-        print("AAAAAAAAAAAAAAAAAAAAAAAAAAAA")
         filtered_books = Book.query.filter(Book.name.ilike(f'%{query}%')).all()
         print(filtered_books)
     else:
@@ -441,36 +429,8 @@ def current_user():
 def direct_to_login_page():
      return send_from_directory('static', 'index.html')
 
-def admin_user_creation():
-    admin_password = generate_password_hash('admin')
-    admin_user = Customer(username = "admin", password_hash= admin_password, name="admin", city='AdminCity', age=0)
-    db.session.add(admin_user)
-    db.session.commit()
-
-
-def delete_books_table():
-    DATABASE_URI = 'sqlite:///instance/library.db'  # Replace with your actual database URI
-    engine = create_engine(DATABASE_URI)
-    metadata = MetaData()
-    table_name = 'books'
-    table_to_delete = Table(table_name, metadata, autoload_with=engine)
-    table_to_delete.drop(engine)
-
-def change_table_name():
-    engine = create_engine('sqlite:///instance/library.db')
-    connection = engine.raw_connection()
-    cursor = connection.cursor()
-    cursor.execute("DROP TABLE books")
-    # cursor.execute("UPDATE books SET status = 'AVAILABLE' WHERE id = 4;")
-    connection.commit()
-    cursor.close()
-    connection.close()
-
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        #change_table_name()
-        #delete_books_table()         
-        #admin_user_creation() 
     app.run(debug=True)
 
