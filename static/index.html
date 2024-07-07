@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div id="content"></div>
+    <h2>Login Form</h2>
+    <form id="loginForm">
+        <label for="username">Username:</label><br>
+        <input type="text" id="username" name="username" required><br><br>
+
+        <label for="password">Password:</label><br>
+        <input type="password" id="password" name="password" required><br><br>
+
+        <input type="button" value="Login" onclick="login()">
+    </form>
+
+    <h3><a href="http://127.0.0.1:5000/register">Register Page</a></h3>
+</body>
+
+    <script>
+
+        const SERVER = 'http://127.0.0.1:5000';
+
+        // document.getElementById('loginForm').addEventListener('submit', function(event) {
+        //     event.preventDefault(); // Prevent the form from submitting the traditional way
+        //     login();
+        // });
+
+        const login = () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            axios.post(SERVER + "/login", {
+                username: username,
+                password: password
+            })
+            .then(response => {
+                const token = response.data.access_token;
+                console.log(token);
+                localStorage.setItem('token', token); // Store token in localStorage
+                window.location.href = '/display_books'
+            })
+            .catch(error => {
+                console.error('Error logging in:', error);
+                alert('Login failed.');
+            });
+        }
+
+    </script>
+</html>

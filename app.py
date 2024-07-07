@@ -5,7 +5,7 @@ from flask import Flask, redirect, render_template, request, jsonify, send_from_
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, get_jwt, jwt_required, create_access_token, get_jwt_identity
-from sqlalchemy import create_engine, MetaData, Table, Integer, Enum
+from sqlalchemy import and_, create_engine, MetaData, Table, Integer, Enum
 from werkzeug.utils import secure_filename
 from werkzeug.datastructures import  FileStorage
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -139,7 +139,10 @@ def login_to_user():
             return jsonify({'message': 'Invalid credentials'}), 401
 
     access_token = create_access_token(identity=username) # create new token
-    return jsonify({'access_token': access_token}), 200
+    return access_token
+    # return redirect(url_for('show_books', token=access_token))
+
+    # return jsonify({'access_token': access_token}), 200
 
 @app.route('/logout', methods=['POST'])
 @jwt_required()
@@ -198,6 +201,7 @@ def show_books():
             'status' : BookStatus(book.status).name
             }
             book_list.append(book_dic)
+    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
     return jsonify(book_list)
 
 @app.route('/display_customers', methods=['GET'])
@@ -352,7 +356,7 @@ def display_all_loans():
 )
     loans_dicts = []
     if (current_user == "admin"):
-        loans = query.all()   
+        loans = query.all() 
         for loan in loans:
             loan_dict = {
                 "loan_id": loan.loan_id,
@@ -380,11 +384,58 @@ def display_all_loans():
             loans_dicts.append(loan_dict)
     return loans_dicts
 
+@app.route('/display_all_late_loans', methods=['GET'])
+@jwt_required()
+def display_all_late_loans():
+    current_user = get_jwt_identity()
+    query = (
+    db.session.query(
+    Loan.id.label("loan_id"),
+    Loan.customer_id,
+    Customer.name.label("customer_name"),
+    Loan.book_id,
+    Book.name.label("book_name"),
+    Loan.loan_date,
+    Loan.return_date,
+    Loan.active,
+    )
+    .join(Customer, Loan.customer_id == Customer.id)
+    .join(Book, Loan.book_id == Book.id)
+    )
+    late_loans_dicts = []
+    today = date.today()
+    if (current_user == "admin"):
+        late_loans = db.session.query(Loan).filter(and_(today > Loan.return_date, Loan.active == True)).all()
+        for loan in late_loans:
+            loan_dict = {
+                "loan_id": loan.loan_id,
+                "customer_id": loan.customer_id,
+                "customer_name": loan.customer_name,
+                "book_id": loan.book_id,
+                "book_name": loan.book_name,
+                "Loan_date": loan.loan_date,
+                "return_date": loan.return_date,
+                "active": loan.active
+            }
+            late_loans_dicts.append(loan_dict)
+    else:
+        customer = db.session.query(Customer).filter(Customer.username == current_user).first()
+        loans = query.filter(Loan.customer_id == customer.id)
+        for loan in loans:
+            loan_dict = {
+                "customer_name": loan.customer_name,
+                "book_name": loan.book_name,
+                "Loan_date": loan.loan_date,
+                "return_date": loan.return_date,
+                "active": loan.active
+            }
+            late_loans_dicts.append(loan_dict)
+    return late_loans_dicts
+
 
 @app.route('/', methods=['GET'])
 def direct_to_login_page():
-    return "MY RESPONSE"
-
+     return send_from_directory('static', 'index.html')
 
 def admin_user_creation():
     admin_password = generate_password_hash('admin')
