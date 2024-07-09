@@ -24,16 +24,17 @@
         });
 
         function displayCustomers() {
-            axios.get('/display_customers', {
+            axios.get('http://127.0.0.1:5000/display_customers', {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(response => {
                 const customers = response.data;
+                console.log(customers)
                 let output = '<ul>';
                 customers.forEach(customer => {
                     output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.status}`;
                     if (customer.status) {
-                        output += ` <button onclick="removeCustomerById(${customer.id})">Remove</button>`;
+                        output += ` <button onclick="removeCustomer(${customer.id})">Remove</button>`;
                     }
                     output += '</li>';
                 });
@@ -67,13 +68,12 @@
             });
         }
 
-        function removeCustomer() {
-            const removeCustomerId = document.getElementById('removeCustomerId').value;
-            axios.post('/remove_customer', { remove_customer_id: removeCustomerId }, {
+        function removeCustomer(removed_customer_id) {
+            axios.post('/remove_customer', { remove_customer_id: removed_customer_id }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(response => {
-                document.getElementById('removeMessage').innerHTML = response.data.message;
+                alert(response.data.message)
             })
             .catch(error => {
                 console.error(error);

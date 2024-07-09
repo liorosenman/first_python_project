@@ -12,7 +12,7 @@
     <!-- Add Book Form -->
     <div id="admin-section" style="display: none;">
         <h2>Add Book</h2>
-        <form id="add-book-form" onsubmit="addBook(event)">
+        <form id="add-book-form">
             <input type="text" id="name" placeholder="Book Name" required>
             <input type="text" id="author" placeholder="Author" required>
             <input type="number" id="year_published" placeholder="Year Published" required>
@@ -22,10 +22,11 @@
                 <option value="TYPE_3">2 days</option>
               </select>
             <input type="file" id="filename" required><br><br>
-            <button type="submit">Add Book</button>
+            <button type="button" value="addBook" onclick="addBook(event)">Add Book</button>
         </form>
     </div>
     <h3><a href="customers.html">Customers Page</a></h3>
+    <h3><a href="loans.html">Loans Page</a></h3>
     <!-- Search Books -->
     <h2>Search Books</h2>
     <input type="text" id="search-query" placeholder="Search by name">
@@ -36,7 +37,8 @@
     <div id="books-list"></div>
 
     <script>
-        const token = localStorage.getItem('token'); // Replace with actual JWT token
+        const SERVER = 'http://127.0.0.1:5000';
+        const token = localStorage.getItem('token'); 
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log("Document Loaded");
@@ -47,7 +49,6 @@
         async function checkUser() {
             const user = await getCurrentUser();
             console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-            print(user)
             if (user == 'admin') {
                 document.getElementById('admin-section').style.display = 'block';
                 console.log("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
@@ -66,11 +67,8 @@
                         'Authorization': `Bearer ${token}`
                     }      
                 });
-                console.log("FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF")
-                console.log(response.data.username);
                 return response.data.username;
             } catch (error) {
-                console.log(token)
                 console.error('Error fetching current user:', error);
 //                localStorage.removeItem('token');
                 return null;
@@ -92,6 +90,7 @@
 
         function displayBooks(books) {
             console.log("Books:", books);
+            console.log(getCurrentUser());
             const booksList = document.getElementById('books-list');
             booksList.innerHTML = books.map(book => `
                 <div>
@@ -102,7 +101,7 @@
                     <p>Status: ${book.status}</p>
                     <p>Filename: ${book.filename}</p>
                     ${getCurrentUser() === 'admin' ? `<button onclick="removeBook(${book.id})">Remove</button>` : ''}
-                    ${getCurrentUser() !== 'admin' ? `<button onclick="loanBook(${book.id})">Loan</button>` : ''}
+                    ${getCurrentUser() !== 'admin' ? `<button onclick="loanBook(${book.id})">Loan - ${book.id}</button>` : ''}
                 </div>
             `).join('');
         }
@@ -110,14 +109,17 @@
         async function addBook(event) {
             event.preventDefault();
             const formData = new FormData();
+            console.log(document.getElementById('name').value);
             formData.append('name', document.getElementById('name').value);
             formData.append('author', document.getElementById('author').value);
             formData.append('year_published', document.getElementById('year_published').value);
             formData.append('borrow_time', document.getElementById('borrow_time').value);
+            console.log(document.getElementById('borrow_time').value);
             formData.append('filename', document.getElementById('filename').files[0]);
-
+            console.log(getCurrentUser())
+            console.log(token)
             try {
-                await axios.post('/add_book', formData, {
+                await axios.post('http://127.0.0.1:5000/add_book', formData, {
                     headers: { 
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
@@ -131,7 +133,7 @@
 
         async function loanBook(bookId) {
             try {
-                await axios.post('/loan_book', { book_id: bookId }, {
+                await axios.post('http://127.0.0.1:5000/loan_book', { book_id: bookId }, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 loadBooks();
@@ -162,6 +164,7 @@
             } catch (error) {
                 console.error('Error finding book:', error);
             }
+      
         }
     </script>
 </body>

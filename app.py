@@ -148,7 +148,7 @@ def logout():
     return jsonify({'message': 'Successfully logged out'}), 200
 
 
-@app.route('/add_book', methods=['POST', 'GET'])
+@app.route('/add_book', methods=['POST'])
 @jwt_required()
 def add_book(): 
     current_user = get_jwt_identity()
@@ -186,6 +186,7 @@ def show_books():
     
     for book in books:
         book_dic = {
+            "id": book.id,
             'name': book.name,
             'author': book.author,
             'year_published': book.year_published,
@@ -236,7 +237,7 @@ def loan_book():
     db.session.commit()
     return jsonify({'message': 'A new loan was made'}), 201
 
-@app.route('/return_book', methods=['GET', 'POST'])
+@app.route('/return_book', methods=['POST'])
 @jwt_required()
 def return_book():
     data = request.get_json()
@@ -346,31 +347,19 @@ def display_all_loans():
     loans_dicts = []
     if (current_user == "admin"):
         loans = query.all() 
-        for loan in loans:
-            loan_dict = {
-                "loan_id": loan.loan_id,
-                "customer_id": loan.customer_id,
-                "customer_name": loan.customer_name,
-                "book_id": loan.book_id,
-                "book_name": loan.book_name,
-                "Loan_date": loan.loan_date,
-                "return_date": loan.return_date,
-                "active": loan.active
-            }
-            loans_dicts.append(loan_dict)
-
     else:
         customer = db.session.query(Customer).filter(Customer.username == current_user).first()
-        loans = query.filter(Loan.customer_id == customer.id)
-        for loan in loans:
-            loan_dict = {
-                "customer_name": loan.customer_name,
-                "book_name": loan.book_name,
-                "Loan_date": loan.loan_date,
-                "return_date": loan.return_date,
-                "active": loan.active
-            }
-            loans_dicts.append(loan_dict)
+        loans = query.filter(Loan.customer_id == customer.id)    
+    for loan in loans:
+        loan_dict = {
+            "loan_id" : loan.loan_id,
+            "customer_name": loan.customer_name,
+            "book_name": loan.book_name,
+            "Loan_date": loan.loan_date,
+            "return_date": loan.return_date,
+            "active": loan.active
+        }
+        loans_dicts.append(loan_dict)
     return loans_dicts
 
 @app.route('/display_all_late_loans', methods=['GET'])
@@ -393,32 +382,21 @@ def display_all_late_loans():
     )
     late_loans_dicts = []
     today = date.today()
-    if (current_user == "admin"):
-        late_loans = db.session.query(Loan).filter(and_(today > Loan.return_date, Loan.active == True)).all()
-        for loan in late_loans:
-            loan_dict = {
-                "loan_id": loan.loan_id,
-                "customer_id": loan.customer_id,
-                "customer_name": loan.customer_name,
-                "book_id": loan.book_id,
-                "book_name": loan.book_name,
-                "Loan_date": loan.loan_date,
-                "return_date": loan.return_date,
-                "active": loan.active
-            }
-            late_loans_dicts.append(loan_dict)
-    else:
+    all_late_loans = db.session.query(Loan).filter(and_(today > Loan.return_date, Loan.active == True)).all()        
+    if current_user != "admin":
         customer = db.session.query(Customer).filter(Customer.username == current_user).first()
-        loans = query.filter(Loan.customer_id == customer.id)
-        for loan in loans:
-            loan_dict = {
-                "customer_name": loan.customer_name,
-                "book_name": loan.book_name,
-                "Loan_date": loan.loan_date,
-                "return_date": loan.return_date,
-                "active": loan.active
-            }
-            late_loans_dicts.append(loan_dict)
+        all_late_loans = query.filter(Loan.customer_id == customer.id)
+    for loan in all_late_loans:
+        book_name = db.session.query(Book).filter(Book.id == loan.book_id).first().name
+        loan_dict = {
+            "customer_name": customer.name,
+            "book_name": book_name,
+            "Loan_date": loan.loan_date,
+            "return_date": loan.return_date,
+            "active": loan.active
+        }
+        late_loans_dicts.append(loan_dict)
+        print(late_loans_dicts)
     return late_loans_dicts
 
 @app.route('/current_user', methods=['GET'])
