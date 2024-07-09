@@ -9,7 +9,6 @@
     <h1>Customer Management</h1>
 
     <h2>Display Customers</h2>
-    <button onclick="displayCustomers()">Display Customers</button>
     <div id="customerList"></div>
 
     <h2>Find Customer by Name</h2>
@@ -18,7 +17,11 @@
     <div id="searchResults"></div>
 
     <script>
-        const token = 'YOUR_JWT_TOKEN_HERE';  // Replace with actual JWT token
+        const token = localStorage.getItem('token'); // Replace with actual JWT token
+
+        document.addEventListener('DOMContentLoaded', (event) => {
+            displayCustomers();
+        });
 
         function displayCustomers() {
             axios.get('/display_customers', {

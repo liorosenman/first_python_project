@@ -46,6 +46,7 @@
                 window.location.href = 'books.html'
             })
             .catch(error => {
+                console.log(username, password)
                 console.error('Error logging in:', error);
                 alert('Login failed.');
             });

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book List</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <h1>Book List</h1>
+    <ul id="book-list"></ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log(localStorage.getItem('token'));
+            axios.get('http://127.0.0.1:5000/display_books', {
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('token') // Assuming the JWT is stored in localStorage
+                }
+            })
+            .then(function (response) {
+                const books = response.data;
+                console.log(books);
+                const bookList = document.getElementById('book-list');
+                
+                books.forEach(book => {
+                    const listItem = document.createElement('li');
+                    listItem.textContent = `Name: ${book.name}, Author: ${book.author}, Year Published: ${book.year_published}, Borrow Time: ${book.borrow_time}, Filename: ${book.filename}, Status: ${book.status}`;
+                    bookList.appendChild(listItem);
+                });
+            })
+            .catch(function (error) {
+                console.error('There was an error fetching the book list:', error);
+            });
+        });
+    </script>
+</body>
+</html>

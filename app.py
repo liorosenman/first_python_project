@@ -22,6 +22,7 @@ app.config['UPLOADED_PHOTOS_DEST'] = 'media'
 app.config['JWT_BLACKLIST_ENABLED'] = True
 app.config['JWT_BLACKLIST_TOKEN_CHECKS'] = ['access', 'refresh']
 
+
 db = SQLAlchemy(app)
 jwt = JWTManager(app)
 
@@ -137,7 +138,7 @@ def login_to_user():
 
     access_token = create_access_token(identity=username) # create new token
     print(access_token)
-    return access_token
+    return jsonify(access_token=access_token), 200
 
 @app.route('/logout', methods=['POST'])
 @jwt_required()
@@ -178,20 +179,21 @@ def add_book():
 def show_books():
     current_user = get_jwt_identity()
     book_list = []
-    if current_user == "admin": ##
+    if current_user == "admin":
         books = Book.query.all()
     else:
-         books = db.session.query(Book).filter(Book.status == BookStatus.AVAILABLE).all()
-    for book in books:   
-            book_dic = {
-            'name' : book.name,
+        books = db.session.query(Book).filter(Book.status == BookStatus.AVAILABLE).all()
+    
+    for book in books:
+        book_dic = {
+            'name': book.name,
             'author': book.author,
             'year_published': book.year_published,
             'borrow_time': BookType(book.borrow_time).name,
             'filename': book.filename,
-            'status' : BookStatus(book.status).name
-            }
-            book_list.append(book_dic)
+            'status': BookStatus(book.status).name
+        }
+        book_list.append(book_dic)
     return jsonify(book_list)
 
 @app.route('/display_customers', methods=['GET'])
@@ -423,7 +425,7 @@ def display_all_late_loans():
 @jwt_required()
 def current_user():
     current_user = get_jwt_identity()
-    return jsonify({"username": current_user}), 200
+    return jsonify(username = current_user), 200
 
 @app.route('/', methods=['GET'])
 def direct_to_login_page():
