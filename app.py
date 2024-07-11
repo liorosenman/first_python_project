@@ -250,7 +250,7 @@ def return_book():
     db.session.commit()
     return jsonify({"message":"The book was returned"})
 
-@app.route('/remove_book', methods=['GET', 'POST'])
+@app.route('/remove_book', methods=['POST'])
 @jwt_required()
 def remove_book():
     current_user = get_jwt_identity()
@@ -272,7 +272,7 @@ def remove_book():
     db.session.commit()
     return jsonify({"message": "Book erased successfully"})
 
-@app.route('/remove_customer', methods=['GET', 'POST'])
+@app.route('/remove_customer', methods=['POST'])
 @jwt_required()
 def remove_customer():
     current_user = get_jwt_identity()
@@ -382,11 +382,14 @@ def display_all_late_loans():
     )
     late_loans_dicts = []
     today = date.today()
-    all_late_loans = db.session.query(Loan).filter(and_(today > Loan.return_date, Loan.active == True)).all()        
+    base_query = db.session.query(Loan).filter(and_(today > Loan.return_date, Loan.active == True))
+    all_late_loans = base_query.all()
+    final_late_loans_list = all_late_loans
     if current_user != "admin":
         customer = db.session.query(Customer).filter(Customer.username == current_user).first()
-        all_late_loans = query.filter(Loan.customer_id == customer.id)
-    for loan in all_late_loans:
+        user_all_late_loans = base_query.filter(Loan.customer_id == customer.id).all()
+        final_late_loans_list = user_all_late_loans      
+    for loan in final_late_loans_list:
         book_name = db.session.query(Book).filter(Book.id == loan.book_id).first().name
         loan_dict = {
             "customer_name": customer.name,

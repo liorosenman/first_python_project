@@ -69,10 +69,11 @@
         }
 
         function removeCustomer(removed_customer_id) {
-            axios.post('/remove_customer', { remove_customer_id: removed_customer_id }, {
+            axios.post('http://127.0.0.1:5000/remove_customer', { remove_customer_id: removed_customer_id }, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
             .then(response => {
+                console.log(removed_customer_id);
                 alert(response.data.message)
             })
             .catch(error => {

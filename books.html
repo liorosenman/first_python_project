@@ -88,9 +88,9 @@
 }
 
 
-        function displayBooks(books) {
+        async function displayBooks(books) {
             console.log("Books:", books);
-            console.log(getCurrentUser());
+            const current_username = await getCurrentUser();
             const booksList = document.getElementById('books-list');
             booksList.innerHTML = books.map(book => `
                 <div>
@@ -100,8 +100,9 @@
                     <p>Borrow Time: ${book.borrow_time}</p>
                     <p>Status: ${book.status}</p>
                     <p>Filename: ${book.filename}</p>
-                    ${getCurrentUser() === 'admin' ? `<button onclick="removeBook(${book.id})">Remove</button>` : ''}
-                    ${getCurrentUser() !== 'admin' ? `<button onclick="loanBook(${book.id})">Loan - ${book.id}</button>` : ''}
+                    ${current_username === 'admin' && book.status != 'ERASED' ? `<button onclick="removeBook(${book.id})">Remove</button>` : ''}
+                    ${current_username !== 'admin' ? `<button onclick="loanBook(${book.id})">Loan - ${book.id}</button>` : ''}
+                    <hr>
                 </div>
             `).join('');
         }
@@ -144,7 +145,8 @@
 
         async function removeBook(bookId) {
             try {
-                await axios.post('/remove_book', { removed_book_id: bookId }, {
+                console.log(bookId)
+                await axios.post('http://127.0.0.1:5000/remove_book', { removed_book_id: bookId }, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 loadBooks();
