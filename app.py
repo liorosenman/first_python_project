@@ -137,7 +137,6 @@ def login_to_user():
             return jsonify({'message': 'Invalid credentials'}), 401
 
     access_token = create_access_token(identity=username) # create new token
-    print(access_token)
     return jsonify(access_token=access_token), 200
 
 @app.route('/logout', methods=['POST'])
@@ -207,6 +206,7 @@ def show_customers():
     customers = db.session.query(Customer).filter(Customer.id != 1).all()
     for customer in customers:
         customer_dict = {
+            'id' : customer.id,
             'username' : customer.username,
             'name' : customer.name,
             'city' : customer.city,
@@ -280,6 +280,7 @@ def remove_customer():
         return jsonify({"message":"Only admin is allowed to remove a customer"})
     data = request.get_json()
     removed_customer_id = data.get('remove_customer_id')
+    print(removed_customer_id)
     removed_customer_loans = db.session.query(Loan).filter(Loan.customer_id == removed_customer_id).first()
     if removed_customer_loans: #If this customer has active loans
         return jsonify({"message" : "This customer has loans"})
@@ -310,12 +311,12 @@ def find_book_by_name():
     filtered_books_dicts = []
     if current_user == "admin":
         filtered_books = Book.query.filter(Book.name.ilike(f'%{query}%')).all()
-        print(filtered_books)
+        # print(filtered_books)
     else:
         filtered_books = db.session.query(Book).filter(Book.status == BookStatus.AVAILABLE, Book.name.like(f"%{query}%")).all()
-        print(filtered_books)
     for book in filtered_books:   
         book_dic = {
+        'id': book.id,
         'name' : book.name,
         'author': book.author,
         'year_published': book.year_published,

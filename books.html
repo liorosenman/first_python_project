@@ -31,6 +31,7 @@
     <h2>Search Books</h2>
     <input type="text" id="search-query" placeholder="Search by name">
     <button onclick="findBookByName()">Search</button>
+    <button onclick="displayBooks()">Show all</button>
 
     <!-- Display Books -->
     <h2>Books</h2>
@@ -48,10 +49,8 @@
 
         async function checkUser() {
             const user = await getCurrentUser();
-            console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
             if (user == 'admin') {
                 document.getElementById('admin-section').style.display = 'block';
-                console.log("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
             }
         }
 
@@ -89,7 +88,6 @@
 
 
         async function displayBooks(books) {
-            console.log("Books:", books);
             const current_username = await getCurrentUser();
             const booksList = document.getElementById('books-list');
             booksList.innerHTML = books.map(book => `
@@ -145,7 +143,6 @@
 
         async function removeBook(bookId) {
             try {
-                console.log(bookId)
                 await axios.post('http://127.0.0.1:5000/remove_book', { removed_book_id: bookId }, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -159,15 +156,15 @@
             const query = document.getElementById('search-query').value;
             try {
                 const response = await axios.get('http://127.0.0.1:5000/find_book_by_name', {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    params: { name_for_search: query }
-                });
+                headers: { 'Authorization': `Bearer ${token}` },
+                data: { name_for_search: query }
+            });
                 displayBooks(response.data);
             } catch (error) {
                 console.error('Error finding book:', error);
             }
-      
         }
+        
     </script>
 </body>
 </html>
