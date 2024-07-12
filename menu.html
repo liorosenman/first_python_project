@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+<nav>
+    <h3 id="username"></h3>
+    <ul>
+        <li><a href="books.html">Books</a></li>
+        <li><a href="loans.html">Loans</a></li>
+        <li style="display: none;"><a href="customers.html">Customers</a></li>
+        <li><a href="http://127.0.0.1:5000/logout"></a></li>
+    </ul>
+</nav>
+</body>
+<script>
+            async function getCurrentUser() {
+            const token = localStorage.getItem('token');
+            console.log("Current token:", token);
+            if (!token) {
+                return null;
+            }
+            try {
+                const response = await axios.get('http://127.0.0.1:5000/current_user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }      
+                });
+                return response.data.username;
+            } catch (error) {
+                console.error('Error fetching current user:', error);
+//                localStorage.removeItem('token');
+                return null;
+            }
+        }
+
+        
+
+
+</script>
+
+
+</html>

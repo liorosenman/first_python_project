@@ -409,6 +409,16 @@ def current_user():
     current_user = get_jwt_identity()
     return jsonify(username = current_user), 200
 
+@app.route('/menu', methods=['GET'])
+@jwt_required()
+def display_menu():
+    username = get_jwt_identity()
+    menu = {"username":username, "books":"books.html", "loans":"loans.html"}
+    if (username == "admin"):
+        menu['customers'] = "customers.html"
+    menu['log_out'] = "http://127.0.0.1:5000/logout"
+    return jsonify(menu)
+
 @app.route('/', methods=['GET'])
 def direct_to_login_page():
      return send_from_directory('static', 'index.html')

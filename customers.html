@@ -75,6 +75,8 @@
             })
             .then(response => {
                 const customers = response.data;
+                console.log(customers);
+                console.log("WHERE ARE WE?")
                 let output = '<ul>';
                 customers.forEach(customer => {
                     output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.active}</li>`;

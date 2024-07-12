@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Management</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script type="module" src="menu_constructor.js" defer></script>
 </head>
 <body>
+    <div id = "menudiv"></div>
     <h1>Library Management</h1>
 
     <!-- Add Book Form -->
@@ -38,12 +40,13 @@
     <div id="books-list"></div>
 
     <script>
+
         const SERVER = 'http://127.0.0.1:5000';
         const token = localStorage.getItem('token'); 
 
         document.addEventListener('DOMContentLoaded', function() {
-            console.log("Document Loaded");
             checkUser();
+            buildMenu();
             loadBooks();
         });
 
@@ -74,6 +77,27 @@
             }
         }
 
+        async function buildMenu(){
+            try {
+            const response = await axios.get('http://127.0.0.1:5000/menu', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        // menusection = document.getElementById('menudiv').value;
+        menuSection = '';
+        menuSection = "<ul>";
+        menuLinks = response.data;
+        for(const linkName in menuLinks){
+            menuSection += "<li><a href = ${obj[key]}>${'linkName'}</a></li>"
+        }
+        menuSection += "<ul>"
+        document.getElementById('menudiv').value = menuSection
+    }catch(error){
+        console.error('Error loading menu:', error);
+        }
+    }
+
+
+
         async function loadBooks() {
     try {
         const response = await axios.get('http://127.0.0.1:5000/display_books', {
@@ -85,7 +109,6 @@
         console.error('Error loading books:', error);
     }
 }
-
 
         async function displayBooks(books) {
             const current_username = await getCurrentUser();
