@@ -144,7 +144,9 @@ def login_to_user():
 def logout():
     jti = get_jwt()['jti']
     blacklist.add(jti)
-    return jsonify({'message': 'Successfully logged out'}), 200
+    send_from_directory('index.html')
+    # return jsonify({'message': 'Successfully logged out'}), 200
+
 
 
 @app.route('/add_book', methods=['POST'])
@@ -413,7 +415,7 @@ def current_user():
 @jwt_required()
 def display_menu():
     username = get_jwt_identity()
-    menu = {"username":username, "books":"books.html", "loans":"loans.html"}
+    menu = {"books":"books.html", "loans":"loans.html"}
     if (username == "admin"):
         menu['customers'] = "customers.html"
     menu['log_out'] = "http://127.0.0.1:5000/logout"

@@ -67,16 +67,15 @@
             });
         }
 
-        function findCustomerByName() {
+        async function findCustomerByName() {
             const nameForSearch = document.getElementById('nameForSearch').value;
-             axios.get('http://127.0.0.1:5000/find_customer_by_name', {
+             await axios.get('http://127.0.0.1:5000/find_customer_by_name', {
                 headers: { 'Authorization': `Bearer ${token}` },
-                data: { name_for_search: nameForSearch }
+                params: { name_for_search: nameForSearch }
             })
             .then(response => {
                 const customers = response.data;
                 console.log(customers);
-                console.log("WHERE ARE WE?")
                 let output = '<ul>';
                 customers.forEach(customer => {
                     output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.active}</li>`;
