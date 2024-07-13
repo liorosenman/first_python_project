@@ -144,8 +144,8 @@ def login_to_user():
 def logout():
     jti = get_jwt()['jti']
     blacklist.add(jti)
-    send_from_directory('index.html')
-    # return jsonify({'message': 'Successfully logged out'}), 200
+    # send_from_directory('index.html')
+    return jsonify({'message': 'Successfully logged out'}), 200
 
 
 
@@ -298,8 +298,9 @@ def find_customer_by_name():
     current_user = get_jwt_identity()
     if current_user != "admin":
         return jsonify({"message":"Only admin is accessed to the DB"})
-    data = request.get_json()
-    query = data.get('name_for_search')
+    # data = request.get_json()
+    # query = data.get('name_for_search')
+    query = request.args.get('name_for_search')
     customers = Customer.query.filter(Customer.name.ilike(f'%{query}%')).all()
     results = [{'id': customer.id, 'username': customer.username, 'name': customer.name, 'city': customer.city, 'age': customer.age, 'active': customer.active} for customer in customers]
     return jsonify(results)
@@ -308,8 +309,9 @@ def find_customer_by_name():
 @jwt_required()
 def find_book_by_name():
     current_user = get_jwt_identity()
-    data = request.get_json()
-    query = data.get('name_for_search')
+    # data = request.get_json()
+    # query = data.get('name_for_search')
+    query = request.args.get('name_for_search')
     filtered_books_dicts = []
     if current_user == "admin":
         filtered_books = Book.query.filter(Book.name.ilike(f'%{query}%')).all()
