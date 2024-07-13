@@ -144,7 +144,6 @@ def login_to_user():
 def logout():
     jti = get_jwt()['jti']
     blacklist.add(jti)
-    # send_from_directory('index.html')
     return jsonify({'message': 'Successfully logged out'}), 200
 
 
