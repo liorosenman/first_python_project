@@ -5,20 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Management</title>
+    <style>
+        .book-image{
+            width: 70px;
+            height: 70px;
+        }
+    </style>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script type="module" src="menu_constructor.js" defer></script>
+    
 </head>
 
 <body>
-    <div id="menudiv">
-        <ul>
-            <li><a href="#" id="logoutLink" onclick="logout()">Logout</a></li>
-            <li><a href="/books.html">Books</a></li>
-            <li><a href="/loans.html">Loans</a></li>
-            <li id="customerlink" style="display:none;"><a href="/customers.html">Customers</a></li>
-
-        </ul>
-    </div>
+    <div id="menudiv"></div>
     <h1>Library Management</h1>
 
     <!-- Add Book Form -->
@@ -37,13 +35,11 @@
             <button type="button" value="addBook" onclick="addBook(event)">Add Book</button>
         </form>
     </div>
-    <h3><a href="customers.html">Customers Page</a></h3>
-    <h3><a href="loans.html">Loans Page</a></h3>
     <!-- Search Books -->
     <h2>Search Books</h2>
     <input type="text" id="search-query" placeholder="Search by name">
     <button id="findbook" onclick="findBookByName()">Search</button>
-    <button onclick="displayBooks()">Show all</button>
+    <button onclick="loadBooks()">Show all</button>
 
     <!-- Display Books -->
     <h2>Books</h2>
@@ -63,30 +59,31 @@
 
         async function checkUser() {
             const user = await getCurrentUser();
+            console.log(user);
             if (user == 'admin') {
                 document.getElementById('admin-section').style.display = 'block';
             }
         }
 
-        async function getCurrentUser() {
-            const token = localStorage.getItem('token');
-            console.log("Current token:", token);
-            if (!token) {
-                return null;
-            }
-            try {
-                const response = await axios.get('http://127.0.0.1:5000/current_user', {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                return response.data.username;
-            } catch (error) {
-                console.error('Error fetching current user:', error);
-                //                localStorage.removeItem('token');
-                return null;
-            }
-        }
+        // async function getCurrentUser() {
+        //     const token = localStorage.getItem('token');
+        //     console.log("Current token:", token);
+        //     if (!token) {
+        //         return null;
+        //     }
+        //     try {
+        //         const response = await axios.get('http://127.0.0.1:5000/current_user', {
+        //             headers: {
+        //                 'Authorization': `Bearer ${token}`
+        //             }
+        //         });
+        //         return response.data.username;
+        //     } catch (error) {
+        //         console.error('Error fetching current user:', error);
+        //         //                localStorage.removeItem('token');
+        //         return null;
+        //     }
+        // }
 
         async function buildMenu() {
             username = await getCurrentUser();
@@ -170,7 +167,7 @@
                     <p>Year Published: ${book.year_published}</p>
                     <p>Borrow Time: ${book.borrow_time}</p>
                     <p>Status: ${book.status}</p>
-                    <p>Filename: ${book.filename}</p>
+                    <img class="book-image" src="media/${book.filename}">
                     ${current_username === 'admin' && book.status != 'ERASED' ? `<button onclick="removeBook(${book.id})">Remove</button>` : ''}
                     ${current_username !== 'admin' ? `<button onclick="loanBook(${book.id})">Loan - ${book.id}</button>` : ''}
                     <hr>
@@ -252,6 +249,7 @@
         }
 
     </script>
+    
 </body>
-
+<script src="menu.js"></script>
 </html>

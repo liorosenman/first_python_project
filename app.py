@@ -213,7 +213,7 @@ def show_customers():
             'name' : customer.name,
             'city' : customer.city,
             'age' : customer.age,
-            'status' : customer.active
+            'active' : customer.active
         }
         customers_list.append(customer_dict)
     return jsonify(customers_list)
@@ -420,7 +420,7 @@ def display_menu():
     menu = {"books":"books.html", "loans":"loans.html"}
     if (username == "admin"):
         menu['customers'] = "customers.html"
-    menu['log_out'] = "http://127.0.0.1:5000/logout"
+    # menu['log_out'] = "http://127.0.0.1:5000/logout"
     return jsonify(menu)
 
 @app.route('/', methods=['GET'])

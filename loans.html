@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
 <body>
+    <div id="menudiv"></div>
     <h2>Loans</h2>
     <select id="loan-filter">
         <option value="all">All Loans</option>
@@ -15,11 +16,12 @@
     <button onclick="filterLoans()">Filter Loans</button>
     <div id="loans-list"></div>
 </body>
-
+<script src="menu.js"></script>
 <script>
     const token = localStorage.getItem('token')
         
         document.addEventListener('DOMContentLoaded', function() {
+            buildMenu(token)
 //            checkUser();
             displayAllLoans()
         });
