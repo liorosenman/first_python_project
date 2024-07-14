@@ -73,14 +73,6 @@ Option to show only late loans
 #### Filter to late loans only
 
 
-
-
-
-
-## Input validation cases
-
 ### subtelties
-Cut all models to a seperate file
 Redirection and links to pages
-admin: id=1 => isadmin=true
-CRUD for all models
+admin: id=1 

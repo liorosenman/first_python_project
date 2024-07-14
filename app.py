@@ -406,8 +406,9 @@ def display_all_late_loans():
         final_late_loans_list = user_all_late_loans      
     for loan in final_late_loans_list:
         book_name = db.session.query(Book).filter(Book.id == loan.book_id).first().name
+        customer_name = db.session.query(Customer).filter(Customer.id == loan.customer_id).first().name
         loan_dict = {
-            "customer_name": customer.name,
+            "customer_name": customer_name,
             "book_name": book_name,
             "Loan_date": loan.loan_date,
             "return_date": loan.return_date,
@@ -437,8 +438,14 @@ def display_menu():
 def direct_to_login_page():
      return send_from_directory('static', 'index.html')
 
+def change_loan():
+    a_loan = db.session.query(Loan).filter(Loan.id == 8).first()
+    a_loan.return_date = datetime(2024, 7, 1)
+    db.session.commit()
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        change_loan()
     app.run(debug=True)
 
