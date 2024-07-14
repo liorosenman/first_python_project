@@ -21,7 +21,7 @@
     <div id="searchResults"></div>
 
     <script>
-        const token = localStorage.getItem('token'); // Replace with actual JWT token
+        const token = localStorage.getItem('token');
 
         document.addEventListener('DOMContentLoaded', (event) => {
             buildMenu();
@@ -49,7 +49,6 @@
         }
 
         async function displayCustomers(customers) {
-            console.log(customers);
             let output = '<ul>';
             customers.forEach(customer => {
                 output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.active}`;
@@ -64,121 +63,48 @@
         }
 
         async function getAllCustomers() {
-            try{
-            await axios.get('http://127.0.0.1:5000/display_customers', {
-                headers: { 'Authorization': `Bearer ${token}` }
+            try {
+                await axios.get('http://127.0.0.1:5000/display_customers', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                })
+                    .then(response => {
+                        const customers = response.data;
+                        displayCustomers(customers)
+                    }
+                    )
+            } catch (error) {
+                console.error('Error loading books:', error);
+            }
+        }
+
+        async function findCustomerByName() {
+            const nameForSearch = document.getElementById('nameForSearch').value;
+            await axios.get('http://127.0.0.1:5000/find_customer_by_name', {
+                headers: { 'Authorization': `Bearer ${token}` },
+                params: { name_for_search: nameForSearch }
             })
                 .then(response => {
                     const customers = response.data;
                     displayCustomers(customers)
-                }
-                )
-        }catch(error){
-            console.error('Error loading books:', error);
+                })
         }
-    }
 
-        // async function displayCustomers() {
-        //     await axios.get('http://127.0.0.1:5000/display_customers', {
-        //         headers: { 'Authorization': `Bearer ${token}` }
-        //     })
-        //         .then(response => {
-        //             const customers = response.data;
-        //             let output = '<ul>';
-        //             customers.forEach(customer => {
-        //                 output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.status}`;
-        //                 if (customer.status == true) {
-        //                     output += ` <button onclick="removeCustomer(${customer.id})">Remove - ${customer.id}</button>`;
-        //                 }
-        //                 output += '</li>';
-        //             });
-        //             output += '</ul>';
-        //             document.getElementById('customerList').innerHTML = output;
-        //         })
-        //         .catch(error => {
-        //             console.error(error);
-        //             alert('Error displaying customers: ' + error.response.data.message);
-        //         });
-        // }
 
-        async function findCustomerByName() {
-                const nameForSearch = document.getElementById('nameForSearch').value;
-                await axios.get('http://127.0.0.1:5000/find_customer_by_name', {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                    params: { name_for_search: nameForSearch }
-                })
-                .then(response => {
-                    const customers = response.data;
-                    displayCustomers(customers)
-                })
+        async function removeCustomer(removed_customer_id) {
+            console.log(await getCurrentUser());
+            try {
+                const response = await axios.post('http://127.0.0.1:5000/remove_customer',
+                    { remove_customer_id: removed_customer_id }, // Data as the second argument
+                    { headers: { 'Authorization': `Bearer ${token}` } } // Config object with headers
+                );
+                console.log("Response:", response.data);
+                displayCustomers();
+            } catch (error) {
+                console.error('Error removing customer:', error.response ? error.response.data : error.message);
             }
-        
-            // async function findCustomerByName() {
-            //     const nameForSearch = document.getElementById('nameForSearch').value;
-            //     await axios.get('http://127.0.0.1:5000/find_customer_by_name', {
-            //         headers: { 'Authorization': `Bearer ${token}` },
-            //         params: { name_for_search: nameForSearch }
-            //     })
-            //         .then(response => {
-            //             const customers = response.data;
-            //             console.log(customers);
-            //             let output = '<ul>';
-            //             customers.forEach(customer => {
-            //                 output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.active}</li>`;
-            //             });
-            //             output += '</ul>';
-            //             document.getElementById('customerList').innerHTML = output;
-            //         })
-            //         .catch(error => {
-            //             console.error(error);
-            //             alert('Error finding customer: ' + error.response.data.message);
-            //         });
-            // }
-
-            async function removeCustomer(removed_customer_id) {
-                console.log(await getCurrentUser());
-                try {
-                    const response = await axios.post('http://127.0.0.1:5000/remove_customer',
-                        { remove_customer_id: removed_customer_id }, // Data as the second argument
-                        { headers: { 'Authorization': `Bearer ${token}` } } // Config object with headers
-                    );
-                    console.log("Response:", response.data);
-                    displayCustomers();
-                    console.log(removed_customer_id);
-                } catch (error) {
-                    console.error('Error removing customer:', error.response ? error.response.data : error.message);
-                }
-            }
+        }
 
 
-        // async function removeCustomer(removed_customer_id) {
-        //     axios.post('http://127.0.0.1:5000/remove_customer', { remove_customer_id: removed_customer_id }, {
-        //         headers: { 'Authorization': `Bearer ${token}` }
-        //     })
-        //     .then(response => {
-        //         console.log(removed_customer_id);
-        //         alert(response.data.message)
-        //     })
-        //     .catch(error => {
-        //         console.error(error);
-        //         alert('Error removing customer: ' + error.response.data.message);
-        //     });
-        // }
-
-        // async function removeCustomer(removed_customer_id) {
-        //     console.log(await getCurrentUser())
-        //     try {
-        //         await axios.post('http://127.0.0.1:5000/remove_customer', {
-        //             headers: { 'Authorization': `Bearer ${token}` },
-        //             data:{ remove_customer_id: removed_customer_id  }
-        //         });
-        //         console.log("WHERE ARE WE?")
-        //         displayCustomers()
-        //         console.log(removed_customer_id);
-        //     } catch (error) {
-        //         console.error('Error removing customer:', error);
-        //     }
-        // }
     </script>
 </body>
 <script src="menu.js"></script>

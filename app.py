@@ -116,8 +116,11 @@ def create_new_user():
         city = data.get('city')
         age = data.get('age')
 
+        if not username or not password or not name or not city or not age:
+            return jsonify({'error' : 'Fill all the fields'})
+
         if Customer.query.filter_by(username=username).first():
-            return jsonify({'message': 'Username already exists'}), 400
+            return jsonify({'error': 'Username already exists'}), 400
         password_hash = generate_password_hash(password) 
         new_user = Customer(username=username, password_hash=password_hash, name=name, city=city,age=age)
         db.session.add(new_user)
@@ -125,17 +128,22 @@ def create_new_user():
 
     return jsonify({'message': 'Registered successfully'}), 201
 
-@app.route('/login', methods=['POST', 'GET'])
+@app.route('/login', methods=['POST'])
 def login_to_user():
     data = request.json
     username = data.get('username')
     password = data.get('password')
 
+    if not username or not password:
+        return jsonify({'error':'Fill both fields'})  
+    
     customer = Customer.query.filter_by(username=username).first()
-
     if not customer or not check_password_hash(customer.password_hash, password): 
-            return jsonify({'message': 'Invalid credentials'}), 401
-
+        return jsonify({'error': 'Invalid credentials'}), 401 
+    
+    if customer.active == False:
+        return jsonify({'error':'This is a deleted user'})
+    
     access_token = create_access_token(identity=username) # create new token
     return jsonify(access_token=access_token), 200
 
@@ -153,12 +161,14 @@ def logout():
 def add_book(): 
     current_user = get_jwt_identity()
     if current_user != "admin":
-        return jsonify({"msg": "Admin access required"}), 403
+        return jsonify({"error": "Admin access required"}), 403
     name = request.form.get('name')
     author = request.form.get('author')
     year_published = request.form.get('year_published')
     borrow_time = request.form.get('borrow_time')
     file = request.files['filename'] # Path to the image
+    if not name or not author or not year_published:
+        return jsonify({'error': 'Fill all the fields'}), 400
     if file.filename == '':
         return jsonify({'error': 'No file selected for uploading'}), 400
     
@@ -308,15 +318,16 @@ def find_customer_by_name():
 @jwt_required()
 def find_book_by_name():
     current_user = get_jwt_identity()
-    # data = request.get_json()
-    # query = data.get('name_for_search')
     query = request.args.get('name_for_search')
+    if query == "" : return []
     filtered_books_dicts = []
     if current_user == "admin":
         filtered_books = Book.query.filter(Book.name.ilike(f'%{query}%')).all()
         # print(filtered_books)
     else:
         filtered_books = db.session.query(Book).filter(Book.status == BookStatus.AVAILABLE, Book.name.like(f"%{query}%")).all()
+    if not filtered_books:
+        return jsonify({'error':'0 Results'})
     for book in filtered_books:   
         book_dic = {
         'id': book.id,

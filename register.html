@@ -18,7 +18,7 @@
         <input type="text" id="city" name="city" required><br>
         <label for="age">Age:</label>
         <input type="number" id="age" name="age" required><br>
-        <input type="button" value="Register" onclick="register()">
+        <input type="submit" value="Register" onclick="register()">
     </form>
 
     <p id="message"></p>
@@ -28,7 +28,7 @@
     <script>
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
-    //         register();
+           register();
      });
 
             const register = () => {
@@ -50,7 +50,7 @@
                 document.getElementById('message').textContent = response.data.message;
             })
             .catch(function(error) {
-                document.getElementById('message').textContent = error.response.data.message;
+                document.getElementById('message').textContent = error.response.data.error
             });
             }
     

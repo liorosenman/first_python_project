@@ -6,19 +6,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Library Management</title>
     <style>
-        .book-image{
+        .book-image {
             width: 70px;
             height: 70px;
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    
+
 </head>
 
 <body>
     <div id="menudiv"></div>
     <h1>Library Management</h1>
-
+    <h4 id="errorElement"></h4>
     <!-- Add Book Form -->
     <div id="admin-section" style="display: none;">
         <h2>Add Book</h2>
@@ -59,91 +59,30 @@
 
         async function checkUser() {
             const user = await getCurrentUser();
-            console.log(user);
             if (user == 'admin') {
                 document.getElementById('admin-section').style.display = 'block';
             }
         }
 
-        // async function getCurrentUser() {
-        //     const token = localStorage.getItem('token');
-        //     console.log("Current token:", token);
-        //     if (!token) {
-        //         return null;
-        //     }
-        //     try {
-        //         const response = await axios.get('http://127.0.0.1:5000/current_user', {
-        //             headers: {
-        //                 'Authorization': `Bearer ${token}`
-        //             }
-        //         });
-        //         return response.data.username;
-        //     } catch (error) {
-        //         console.error('Error fetching current user:', error);
-        //         //                localStorage.removeItem('token');
-        //         return null;
-        //     }
-        // }
-
-        async function buildMenu() {
-            username = await getCurrentUser();
-            if (username == "admin") {
-                document.getElementById("customerlink").style.display = "block";
+        async function getCurrentUser() {
+            const token = localStorage.getItem('token');
+            console.log("Current token:", token);
+            if (!token) {
+                return null;
             }
-
+            try {
+                const response = await axios.get('http://127.0.0.1:5000/current_user', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                return response.data.username;
+            } catch (error) {
+                console.error('Error fetching current user:', error);
+                //                localStorage.removeItem('token');
+                return null;
+            }
         }
-
-        // function logout() {
-        //     axios.post('http://127.0.0.1:5000/logout', {}, {
-        //         headers: {
-        //             'Authorization': `Bearer ${token}` + localStorage.getItem('access_token') // Assuming you store the JWT in local storage
-        //         }
-        //     })
-        //         .then(response => {
-        //             console.log(localStorage.getItem('access_token'));
-        //             alert(response.data.message); // Show success message
-        //             localStorage.removeItem('access_token'); // Remove token from storage
-        //             window.location.href = '/'; // Redirect to home page or login page
-        //         })
-        //         .catch(error => {
-        //             console.error('Error logging out:', error);
-        //             alert('Failed to log out. Please try again.');
-        //         });
-        // }
-
-        // function logout() {
-        //     axios.post('http://127.0.0.1:5000/logout')
-        //         .then(function (response) {
-        //             console.log(response.data.message);
-        //             window.location.href = 'index.html'; // Redirect to the index.html page
-        //         })
-        //         .catch(function (error) {
-        //             console.error('Error logging out:', error);
-        //         });
-        // }
-        // document.getElementById("logoutLink").addEventListener("click", function (event) {
-        //     event.preventDefault(); // Prevent the default link behavior
-        //     logout();
-        //   });
-        //         try {
-        //         const response = await axios.get('http://127.0.0.1:5000/menu', {
-        //         headers: { 'Authorization': `Bearer ${token}` }
-        //     });
-        //     // menusection = document.getElementById('menudiv').value;
-        //     menuSection = '';
-        //     menuSection = "<ul>";
-        //     menuLinks = response.data;
-        //     for(var linkName in menuLinks){
-        //         menuSection += `<li><a href = "${menuLinks[linkName]}">${linkName}</a></li>`;
-        //     }
-        //     menuSection += "</ul>"
-        //     document.getElementById('menudiv').innerHTML = menuSection
-        //     }catch(error){
-        //         console.error('Error loading menu:', error);
-        //     }
-        // }
-
-
 
         async function loadBooks() {
             try {
@@ -178,27 +117,32 @@
         async function addBook(event) {
             event.preventDefault();
             const formData = new FormData();
-            console.log(document.getElementById('name').value);
             formData.append('name', document.getElementById('name').value);
             formData.append('author', document.getElementById('author').value);
             formData.append('year_published', document.getElementById('year_published').value);
             formData.append('borrow_time', document.getElementById('borrow_time').value);
-            console.log(document.getElementById('borrow_time').value);
             formData.append('filename', document.getElementById('filename').files[0]);
-            console.log(getCurrentUser())
-            console.log(token)
             try {
-                await axios.post('http://127.0.0.1:5000/add_book', formData, {
+                const response = await axios.post('http://127.0.0.1:5000/add_book', formData, {
                     headers: {
                         'Authorization': `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
                     }
                 });
-                loadBooks();
-            } catch (error) {
-                console.error('Error adding book:', error);
+
+                const message = response.data.message;
+                console.log(message);
+                loadBooks()
+                //    console.log(response.data.message)
+
+            }
+            catch (error) {
+                // console.error('Error fetching message:', error);
+                alert("Error adding a book");
             }
         }
+
+
 
         async function loanBook(bookId) {
             try {
@@ -238,18 +182,14 @@
             }
         }
 
-        // document.getElementById("findbook").addEventListener("click", function (event) {
-        // event.preventDefault(); // Prevent the default link behavior
-        // findBookByName();
-        //  });
-
         function logout() {
             axios.post('http://127.0.0.1:5000/logout')
             window.location.href = 'index.html'
         }
 
     </script>
-    
+
 </body>
 <script src="menu.js"></script>
+
 </html>

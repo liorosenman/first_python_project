@@ -4,7 +4,7 @@ async function buildMenu() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         menuSection = '';
-        menuSection = "<ul>";
+        menuSection = '<ul style="display:flex; list-style-type: none; gap:10px">'
         menuLinks = response.data;
         console.log(menuLinks);
         for (var linkName in menuLinks) {

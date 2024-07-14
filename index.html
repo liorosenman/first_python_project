@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 </head>
+
 <body>
     <div id="content"></div>
     <h2>Login Form</h2>
@@ -16,41 +18,48 @@
         <label for="password">Password:</label><br>
         <input type="password" id="password" name="password" required><br><br>
 
-        <input type="button" value="Login" onclick="login()">
+        <input type="submit" value="Login" onclick="login()">
     </form>
+    <h4 id="errorElement"></h4>
 
     <h3><a href="register.html">Register Page</a></h3>
 </body>
 
-    <script>
+<script>
 
-        const SERVER = 'http://127.0.0.1:5000';
+    const SERVER = 'http://127.0.0.1:5000';
 
-        document.getElementById('loginForm').addEventListener('submit', function(event) {
-            event.preventDefault(); 
+    const login = () => {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        axios.post(SERVER + "/login", {
+            username: username,
+            password: password
+        }, { headers: { 'Content-Type': 'application/json' } })
+            .then(response => {
+                const token = response.data.access_token;     
+                if (token && token.trim() !== "") {
+                    localStorage.setItem('token', token);
+                    window.location.href = 'books.html'
+                }
+                document.getElementById('errorElement').innerText = response.data.error
+              })
+
+            .catch(error => {
+                document.getElementById('errorElement').innerText = "There is an error";
+            });
+
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const loginForm = document.getElementById('loginForm');
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
             login();
         });
+    });
 
-        const login = () => {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
+</script>
 
-            axios.post(SERVER + "/login", {
-                username: username,
-                password: password
-            })
-            .then(response => {
-                const token = response.data.access_token;
-                localStorage.setItem('token', token); // Store token in localStorage
-                console.log(token);
-                window.location.href = 'books.html'
-            })
-            .catch(error => {
-                console.log(username, password)
-                console.error('Error logging in:', error);
-                alert('Login failed.');
-            });
-        }
-
-    </script>
 </html>
