@@ -104,7 +104,7 @@
                     <p>Name: ${book.name}</p>
                     <p>Author: ${book.author}</p>
                     <p>Year Published: ${book.year_published}</p>
-                    <p>Borrow Time: ${book.borrow_time}</p>
+                    <p>Borrow Time: ${book.borrow_time.value}</p>
                     <p>Status: ${book.status}</p>
                     <img class="book-image" src="media/${book.filename}">
                     ${current_username === 'admin' && book.status != 'ERASED' ? `<button onclick="removeBook(${book.id})">Remove</button>` : ''}
@@ -129,15 +129,13 @@
                         'Content-Type': 'multipart/form-data'
                     }
                 });
-
-                const message = response.data.message;
-                console.log(message);
+               
                 loadBooks()
-                //    console.log(response.data.message)
-
+                const message = response.data.message;
+                document.getElementById('errorElement').innerText = message;
+               
             }
             catch (error) {
-                // console.error('Error fetching message:', error);
                 alert("Error adding a book");
             }
         }

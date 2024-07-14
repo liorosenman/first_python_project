@@ -23,6 +23,7 @@ Front Page
 ### Valid details
 ### Wrong user
 ### Wrong Password
+### Inactive user
 Links to books page after login
 
 ## ---ADMIN----------------------------------------------------------------------------
@@ -62,11 +63,14 @@ Option to show only late loans
 1. Create a new loan
 2. Change book's status to LOANED
 3. Other users will not see this book in the list
-4. The loan will appear in the loans page
-### Return a book:
+4. The loan will appear in the loans page with a return button
+### Loans page
+#### List of loans with details
+#### Return a book:
 1. Change in loans table the row to inactive
 2. Change the book status to AVAILABLE
 3. The book will return to the list
+#### Filter to late loans only
 
 
 

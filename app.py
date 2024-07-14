@@ -232,7 +232,7 @@ def show_customers():
 def loan_book():
     current_user = get_jwt_identity()
     if current_user == "admin":
-        return jsonify({"msg": "Only regular user can borrow"}), 403
+        return jsonify({"error": "Only regular user can borrow"}), 403
     the_borrowing_user_id = db.session.query(Customer).filter(Customer.username == current_user).first().id
     data = request.get_json()
     bookId = data.get('book_id')
