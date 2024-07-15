@@ -17,7 +17,7 @@
 
 <body>
     <div id="menudiv"></div>
-    <h1>Library Management</h1>
+    <h1>Books page</h1>
     <h4 id="errorElement"></h4>
     <!-- Add Book Form -->
     <div id="admin-section" style="display: none;">
@@ -66,7 +66,6 @@
 
         async function getCurrentUser() {
             const token = localStorage.getItem('token');
-            console.log("Current token:", token);
             if (!token) {
                 return null;
             }
@@ -98,6 +97,7 @@
 
         async function displayBooks(books) {
             const current_username = await getCurrentUser();
+            console.log(current_username);
             const booksList = document.getElementById('books-list');
             booksList.innerHTML = books.map(book => `
                 <div>

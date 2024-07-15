@@ -366,7 +366,9 @@ def display_all_loans():
         customer = db.session.query(Customer).filter(Customer.username == current_user).first()
         loans = query.filter(Loan.customer_id == customer.id)    
     for loan in loans:
+        # customer_username = db.session.query(Customer).filter(Customer.id == loan.customer_id).first().username
         loan_dict = {
+            # "customer_username" : customer_username,
             "loan_id" : loan.loan_id,
             "customer_name": loan.customer_name,
             "book_name": loan.book_name,

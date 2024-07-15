@@ -30,7 +30,6 @@
 
         async function getCurrentUser() {
             const token = localStorage.getItem('token');
-            console.log("Current token:", token);
             if (!token) {
                 return null;
             }
@@ -49,6 +48,7 @@
         }
 
         async function displayCustomers(customers) {
+            current_user = await getCurrentUser();
             let output = '<ul>';
             customers.forEach(customer => {
                 output += `<li>${customer.name} (${customer.username}) - ${customer.city}, ${customer.age} years old, Status: ${customer.active}`;
@@ -91,11 +91,10 @@
 
 
         async function removeCustomer(removed_customer_id) {
-            console.log(await getCurrentUser());
             try {
                 const response = await axios.post('http://127.0.0.1:5000/remove_customer',
-                    { remove_customer_id: removed_customer_id }, // Data as the second argument
-                    { headers: { 'Authorization': `Bearer ${token}` } } // Config object with headers
+                    { remove_customer_id: removed_customer_id },
+                    { headers: { 'Authorization': `Bearer ${token}` } }
                 );
                 console.log("Response:", response.data);
                 displayCustomers();
@@ -103,7 +102,6 @@
                 console.error('Error removing customer:', error.response ? error.response.data : error.message);
             }
         }
-
 
     </script>
 </body>
